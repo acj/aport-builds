@@ -1,0 +1,18 @@
+on:
+  push:
+    branches:
+      - main
+      - actions/abuild/*
+  schedule:
+    - cron:  '0 9 * * *'
+
+jobs:
+  bcc:
+    runs-on: ubuntu-20.04
+    name: bcc
+    steps:
+      - id: build-test-mr
+        uses: acj/action-update-alpine-package@main
+        with:
+          github-repo: "iovisor/bcc"
+          package-path: "community/bcc"
