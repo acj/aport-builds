@@ -1,4 +1,4 @@
-name: ply
+name: aports
 
 on:
   push:
@@ -13,12 +13,24 @@ jobs:
     name: Build Latest Release
     runs-on: ubuntu-20.04
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { github-repo: iovisor/bcc,      package-path: community/bcc }
+          - { github-repo: iovisor/bpftrace, package-path: community/bpftrace }
+          - { github-repo: kornelski/dssim,  package-path: testing/dssim }
+          - { github-repo: acj/krapslog-rs,  package-path: community/krapslog }
+          - { github-repo: libbpf/libbpf,    package-path: community/libbpf }
+          - { github-repo: iovisor/ply,      package-path: community/ply }
+          - { github-repo: asciimoo/wuzz,    package-path: testing/wuzz }
+
     steps:
     - name: Resolve package and release versions
       id: resolve_versions
       env:
-        GITHUB_REPO: iovisor/ply
-        PACKAGE_PATH: community/ply
+        GITHUB_REPO: ${{ matrix.github-repo }}
+        PACKAGE_PATH: ${{ matrix.package-path }}
       run: |
         #!/bin/sh
         set -euo pipefail
