@@ -24,7 +24,7 @@ jobs:
           - { github-repo: USCiLab/cereal,   package-path: community/cereal }
           - { github-repo: kornelski/dssim,  package-path: community/dssim }
           - { github-repo: acj/krapslog-rs,  package-path: community/krapslog }
-          - { github-repo: libbpf/libbpf,    package-path: community/libbpf }
+          - { github-repo: libbpf/libbpf,    package-path: main/libbpf }
           # TODO: Watch tags instead of releases
           #- { github-repo: iovisor/ply,      package-path: community/ply }
           - { github-repo: rbspy/rbspy,      package-path: community/rbspy }
