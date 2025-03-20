@@ -50,7 +50,11 @@ jobs:
           echo ::set-output name=release_version::"$RELEASE_VERSION"
           echo ::set-output name=branch_name::"$PACKAGE_PATH-to-$RELEASE_VERSION"
           echo ::set-output name=commit_message::"$PACKAGE_PATH: upgrade to $RELEASE_VERSION"
+
+          echo "Current version: $PACKAGE_VERSION"
+          echo "New version available: $RELEASE_VERSION"
         else
+          echo "Current version ($PACKAGE_VERSION) is the most recent release"
           echo ::set-output name=have_new_version::false
         fi
     - name: Check out aports
