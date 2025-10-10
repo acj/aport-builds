@@ -20,6 +20,7 @@ jobs:
       matrix:
         include:
           - { github-repo: iovisor/bcc,      package-path: community/bcc }
+          - { github-repo: iovisor/blazesym, package-path: community/blazesym }
           - { github-repo: iovisor/bpftrace, package-path: community/bpftrace }
           - { github-repo: USCiLab/cereal,   package-path: community/cereal }
           - { github-repo: kornelski/dssim,  package-path: community/dssim }
