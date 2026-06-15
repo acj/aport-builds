@@ -45,18 +45,18 @@ jobs:
         RELEASE_VERSION=$(curl -Ls https://api.github.com/repos/$GITHUB_REPO/releases/latest | jq -r .tag_name | tr -d 'v')
 
         if ruby -e "exit Gem::Version.new('$RELEASE_VERSION') > Gem::Version.new('$PACKAGE_VERSION')"; then
-          echo ::set-output name=have_new_version::true
-          echo ::set-output name=package_path::"$PACKAGE_PATH"
-          echo ::set-output name=package_version::"$PACKAGE_VERSION"
-          echo ::set-output name=release_version::"$RELEASE_VERSION"
-          echo ::set-output name=branch_name::"$PACKAGE_PATH-to-$RELEASE_VERSION"
-          echo ::set-output name=commit_message::"$PACKAGE_PATH: upgrade to $RELEASE_VERSION"
+          echo "have_new_version=true" >> "$GITHUB_OUTPUT"
+          echo "package_path=$PACKAGE_PATH" >> "$GITHUB_OUTPUT"
+          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "branch_name=$PACKAGE_PATH-to-$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "commit_message=$PACKAGE_PATH: upgrade to $RELEASE_VERSION" >> "$GITHUB_OUTPUT"
 
           echo "Current version: $PACKAGE_VERSION"
           echo "New version available: $RELEASE_VERSION"
         else
           echo "Current version ($PACKAGE_VERSION) is the most recent release"
-          echo ::set-output name=have_new_version::false
+          echo "have_new_version=false" >> "$GITHUB_OUTPUT"
         fi
     - name: Check out aports
       if: steps.resolve_versions.outputs.have_new_version == 'true'
@@ -79,6 +79,7 @@ jobs:
         COMMIT_AUTHOR_NAME: 'Adam Jensen'
         COMMIT_AUTHOR_EMAIL: 'adam@acj.sh'
         FAIL_IF_BRANCH_EXISTS: 'false'
+        GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
       run: |
         #!/bin/sh
 
@@ -88,7 +89,7 @@ jobs:
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
 
-        git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.alpinelinux.org/acj/aports.git
+        git remote add gitlab "https://oauth2:${GITLAB_TOKEN}@gitlab.alpinelinux.org/acj/aports.git"
 
         set +e
         # Ensure existing remote branch (if any) is visible
@@ -100,7 +101,7 @@ jobs:
         set -e
 
         if [ $branch_exists -eq 0 ]; then
-          echo ::set-output name=branch_name_already_exists::true
+          echo "branch_name_already_exists=true" >> "$GITHUB_OUTPUT"
           if [ "$FAIL_IF_BRANCH_EXISTS" == "true" ]; then
             echo "Branch $BRANCH_NAME already exists"
             exit 1
@@ -109,7 +110,7 @@ jobs:
           fi
         fi
 
-        echo ::set-output name=branch_name_already_exists::false
+        echo "branch_name_already_exists=false" >> "$GITHUB_OUTPUT"
 
         cd $GITHUB_WORKSPACE
         if ! git diff --quiet; then
@@ -127,12 +128,13 @@ jobs:
         BRANCH_NAME: ${{ steps.resolve_versions.outputs.branch_name }}
         COMMIT_MESSAGE: ${{ steps.resolve_versions.outputs.commit_message }}
         GITLAB_PROJECT_ID: 1228
+        GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
       run: |
         #!/bin/sh
 
         set -eu
 
-        private_token="${{ secrets.GITLAB_TOKEN }}"
+        private_token="$GITLAB_TOKEN"
         body="{
           \"id\": \"$GITLAB_PROJECT_ID\",
           \"source_branch\": \"$BRANCH_NAME\",
@@ -151,14 +153,14 @@ jobs:
       if: steps.resolve_versions.outputs.have_new_version == 'true'
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        WORKFLOW_NAME: ${{ github.workflow }}
+        BRANCH_NAME: ${{ steps.resolve_versions.outputs.branch_name }}
+        BRANCH_ALREADY_EXISTS: ${{ steps.create_branch.outputs.branch_name_already_exists }}
       run: |
-        branch_name="${{ steps.resolve_versions.outputs.branch_name }}"
-        branch_already_exists=${{ steps.create_branch.outputs.branch_name_already_exists == 'true' }}
-
-        if [ "$branch_already_exists" == "true" ]; then
-          curl -s -X POST -H 'Content-type: application/json' --data "{\"text\":\"New version of ${{ github.workflow }} is available, but branch '$branch_name' already exists\"}" $SLACK_WEBHOOK_URL
+        if [ "$BRANCH_ALREADY_EXISTS" == "true" ]; then
+          curl -s -X POST -H 'Content-type: application/json' --data "{\"text\":\"New version of $WORKFLOW_NAME is available, but branch '$BRANCH_NAME' already exists\"}" "$SLACK_WEBHOOK_URL"
         else
-          PR_URL="https://github.com/acj/aports/pull/new/$branch_name"
-          curl -s -X POST -H 'Content-type: application/json' --data "{\"text\":\"New branch for ${{ github.workflow }} created: $PR_URL\"}" $SLACK_WEBHOOK_URL
+          PR_URL="https://github.com/acj/aports/pull/new/$BRANCH_NAME"
+          curl -s -X POST -H 'Content-type: application/json' --data "{\"text\":\"New branch for $WORKFLOW_NAME created: $PR_URL\"}" "$SLACK_WEBHOOK_URL"
         fi
 
