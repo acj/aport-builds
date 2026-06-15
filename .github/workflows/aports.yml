@@ -45,18 +45,18 @@ jobs:
         RELEASE_VERSION=$(curl -Ls https://api.github.com/repos/$GITHUB_REPO/releases/latest | jq -r .tag_name | tr -d 'v')
 
         if ruby -e "exit Gem::Version.new('$RELEASE_VERSION') > Gem::Version.new('$PACKAGE_VERSION')"; then
-          echo ::set-output name=have_new_version::true
-          echo ::set-output name=package_path::"$PACKAGE_PATH"
-          echo ::set-output name=package_version::"$PACKAGE_VERSION"
-          echo ::set-output name=release_version::"$RELEASE_VERSION"
-          echo ::set-output name=branch_name::"$PACKAGE_PATH-to-$RELEASE_VERSION"
-          echo ::set-output name=commit_message::"$PACKAGE_PATH: upgrade to $RELEASE_VERSION"
+          echo "have_new_version=true" >> "$GITHUB_OUTPUT"
+          echo "package_path=$PACKAGE_PATH" >> "$GITHUB_OUTPUT"
+          echo "package_version=$PACKAGE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "release_version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "branch_name=$PACKAGE_PATH-to-$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "commit_message=$PACKAGE_PATH: upgrade to $RELEASE_VERSION" >> "$GITHUB_OUTPUT"
 
           echo "Current version: $PACKAGE_VERSION"
           echo "New version available: $RELEASE_VERSION"
         else
           echo "Current version ($PACKAGE_VERSION) is the most recent release"
-          echo ::set-output name=have_new_version::false
+          echo "have_new_version=false" >> "$GITHUB_OUTPUT"
         fi
     - name: Check out aports
       if: steps.resolve_versions.outputs.have_new_version == 'true'
@@ -100,7 +100,7 @@ jobs:
         set -e
 
         if [ $branch_exists -eq 0 ]; then
-          echo ::set-output name=branch_name_already_exists::true
+          echo "branch_name_already_exists=true" >> "$GITHUB_OUTPUT"
           if [ "$FAIL_IF_BRANCH_EXISTS" == "true" ]; then
             echo "Branch $BRANCH_NAME already exists"
             exit 1
@@ -109,7 +109,7 @@ jobs:
           fi
         fi
 
-        echo ::set-output name=branch_name_already_exists::false
+        echo "branch_name_already_exists=false" >> "$GITHUB_OUTPUT"
 
         cd $GITHUB_WORKSPACE
         if ! git diff --quiet; then
