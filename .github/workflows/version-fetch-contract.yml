@@ -1,0 +1,46 @@
+name: version-fetch-contract
+
+# Hits the real upstreams to catch format drift that offline tests can't see:
+# e.g. GitHub renaming tag_name, or an APKBUILD layout change that breaks
+# parsing. Runs on a schedule (not on PRs) so a flaky/changed upstream can't
+# block merges; failures are an early heads-up, not a gate.
+
+on:
+  schedule:
+    - cron: '30 9 * * *'
+  workflow_dispatch:
+
+jobs:
+  contract:
+    name: Parse real upstream responses
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { github-repo: acj/krapslog-rs, package-path: community/krapslog }
+          - { github-repo: libbpf/libbpf,   package-path: main/libbpf }
+          - { github-repo: rbspy/rbspy,     package-path: community/rbspy }
+    env:
+      # Authenticated requests get a much higher GitHub API rate limit.
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_REPO: ${{ matrix.github-repo }}
+      PACKAGE_PATH: ${{ matrix.package-path }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Fetch and parse, asserting version-like shape
+      run: |
+        set -euo pipefail
+
+        version_like() {
+          echo "$1" | grep -Eq '^[0-9]+(\.[0-9]+)+'
+        }
+
+        PACKAGE_VERSION=$(curl -s "https://raw.githubusercontent.com/alpinelinux/aports/master/$PACKAGE_PATH/APKBUILD" | ./scripts/parse-version.sh apkbuild)
+        RELEASE_VERSION=$(curl -Ls -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/$GITHUB_REPO/releases/latest" | ./scripts/parse-version.sh release)
+
+        echo "$PACKAGE_PATH: aports=$PACKAGE_VERSION upstream=$RELEASE_VERSION"
+
+        version_like "$PACKAGE_VERSION" || { echo "::error::APKBUILD pkgver did not parse to a version: '$PACKAGE_VERSION'"; exit 1; }
+        version_like "$RELEASE_VERSION" || { echo "::error::release tag did not parse to a version: '$RELEASE_VERSION'"; exit 1; }

@@ -44,8 +44,8 @@ jobs:
       run: |
         set -euo pipefail
 
-        PACKAGE_VERSION=$(curl -s https://raw.githubusercontent.com/alpinelinux/aports/master/$PACKAGE_PATH/APKBUILD | grep "pkgver=" | sed -E 's/pkgver=//g')
-        RELEASE_VERSION=$(curl -Ls https://api.github.com/repos/$GITHUB_REPO/releases/latest | jq -r .tag_name | tr -d 'v')
+        PACKAGE_VERSION=$(curl -s https://raw.githubusercontent.com/alpinelinux/aports/master/$PACKAGE_PATH/APKBUILD | "$GITHUB_WORKSPACE/aport-builds/scripts/parse-version.sh" apkbuild)
+        RELEASE_VERSION=$(curl -Ls https://api.github.com/repos/$GITHUB_REPO/releases/latest | "$GITHUB_WORKSPACE/aport-builds/scripts/parse-version.sh" release)
 
         export PACKAGE_PATH PACKAGE_VERSION RELEASE_VERSION
         "$GITHUB_WORKSPACE/aport-builds/scripts/resolve-version.sh"
