@@ -1,0 +1,52 @@
+name: abuild-smoke-test
+
+# Exercises the real "build the package" path without needing an upstream to
+# ship a new version: it builds a known-good package (krapslog by default) at
+# the version Alpine currently ships. If this goes red after a change, the
+# build wiring is broken regardless of whether a new release exists.
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      package-path:
+        description: "Package to build, e.g. community/krapslog"
+        required: false
+        default: community/krapslog
+      release-version:
+        description: "Version to build (defaults to the version currently in aports)"
+        required: false
+        default: ""
+
+jobs:
+  build:
+    name: Build a known package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PACKAGE_PATH: ${{ github.event.inputs.package-path || 'community/krapslog' }}
+    steps:
+    - name: Check out aports
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        repository: alpinelinux/aports
+    - name: Determine version to build
+      id: version
+      run: |
+        set -euo pipefail
+
+        REQUESTED="${{ github.event.inputs.release-version }}"
+        if [ -n "$REQUESTED" ]; then
+          VERSION="$REQUESTED"
+        else
+          VERSION=$(grep "pkgver=" "$PACKAGE_PATH/APKBUILD" | head -n1 | sed -E 's/pkgver=//g')
+        fi
+
+        echo "Building $PACKAGE_PATH at version $VERSION"
+        echo "release_version=$VERSION" >> "$GITHUB_OUTPUT"
+    - name: Build with abuild
+      uses: acj/action-abuild@master
+      with:
+        PACKAGE_PATH: ${{ env.PACKAGE_PATH }}
+        RELEASE_VERSION: ${{ steps.version.outputs.release_version }}

@@ -1,0 +1,21 @@
+name: test
+
+# Fast, network-free checks that run on every change so the "check for new
+# versions" logic is covered without waiting on a real upstream release.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  resolve-version:
+    name: Version check logic
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run resolve-version tests
+      run: ./scripts/resolve-version.test.sh
