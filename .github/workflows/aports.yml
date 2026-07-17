@@ -66,7 +66,7 @@ jobs:
         repository: alpinelinux/aports
     - name: Try building the new release version
       if: steps.resolve_versions.outputs.have_new_version == 'true'
-      uses: acj/action-abuild@master
+      uses: acj/action-abuild@v1
       with:
         PACKAGE_PATH: ${{ steps.resolve_versions.outputs.package_path }}
         RELEASE_VERSION: ${{ steps.resolve_versions.outputs.release_version }}
