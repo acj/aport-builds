@@ -98,15 +98,18 @@ jobs:
         git remote add gitlab "git@gitlab.alpinelinux.org:acj/aports.git"
 
         set +e
-        # Ensure existing remote branch (if any) is visible
-        git remote set-branches gitlab "$BRANCH_NAME"
-        git fetch gitlab
-
-        git show-ref --verify --quiet refs/remotes/gitlab/"$BRANCH_NAME"
-        branch_exists=$?
+        git ls-remote --exit-code --heads gitlab "refs/heads/$BRANCH_NAME" >/dev/null
+        ls_remote_status=$?
         set -e
 
-        if [ $branch_exists -eq 0 ]; then
+        case $ls_remote_status in
+          0) branch_exists=true ;;
+          2) branch_exists=false ;;
+          *) echo "Couldn't reach gitlab to check for $BRANCH_NAME (ls-remote exit $ls_remote_status)" >&2
+             exit 1 ;;
+        esac
+
+        if [ "$branch_exists" = true ]; then
           echo "branch_name_already_exists=true" >> "$GITHUB_OUTPUT"
           if [ "$FAIL_IF_BRANCH_EXISTS" == "true" ]; then
             echo "Branch $BRANCH_NAME already exists"
