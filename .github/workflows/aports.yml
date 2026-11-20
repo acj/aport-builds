@@ -43,7 +43,7 @@ jobs:
         set -euo pipefail
 
         PACKAGE_VERSION=$(curl -fsS https://raw.githubusercontent.com/alpinelinux/aports/master/$PACKAGE_PATH/APKBUILD | grep "pkgver=" | sed -E 's/pkgver=//g')
-        RELEASE_VERSION=$(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/$GITHUB_REPO/releases/latest | jq -r .tag_name | tr -d 'v')
+        RELEASE_VERSION=$(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/$GITHUB_REPO/releases/latest | jq -er .tag_name | tr -d 'v')
 
         if ruby -e "exit Gem::Version.new('$RELEASE_VERSION') > Gem::Version.new('$PACKAGE_VERSION')"; then
           echo "have_new_version=true" >> "$GITHUB_OUTPUT"
