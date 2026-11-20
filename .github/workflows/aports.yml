@@ -93,7 +93,7 @@ jobs:
         chmod 700 ~/.ssh
         printf '%s\n' "$GITLAB_SSH_KEY" > ~/.ssh/id_ed25519
         chmod 600 ~/.ssh/id_ed25519
-        printf '%s\n' 'gitlab.alpinelinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA3AxnPM+Cquq/2QXWWmuHdgmfMIU+v/7kV/k3p+KpBd' >> ~/.ssh/known_hosts
+        printf '%s\n' 'gitlab.alpinelinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK4/XEEdwtUWR6lvyC9XfefskSmWuvxeUK6byjxSAzsa' >> ~/.ssh/known_hosts
 
         git remote add gitlab "git@gitlab.alpinelinux.org:acj/aports.git"
 
