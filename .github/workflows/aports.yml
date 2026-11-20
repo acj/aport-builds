@@ -61,10 +61,12 @@ jobs:
         fi
     - name: Check out aports
       if: steps.resolve_versions.outputs.have_new_version == 'true'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
-        fetch-depth: 0
         repository: alpinelinux/aports
+        fetch-depth: 0
+        filter: blob:none
+        sparse-checkout: ${{ steps.resolve_versions.outputs.package_path }}
     - name: Try building the new release version
       if: steps.resolve_versions.outputs.have_new_version == 'true'
       uses: acj/action-abuild@v1.2
